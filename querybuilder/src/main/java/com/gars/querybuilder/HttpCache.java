@@ -10,7 +10,7 @@ public class HttpCache extends DbBase{
 
     public static SQLiteDatabase DB;
     public static final String DATABASE_NAME = "httpcache";
-    public static final int DATABASE_VERSION = 2;
+    public static final int DATABASE_VERSION = 3;
 
     public void open_db() {
         if (!isOpen())

@@ -53,6 +53,7 @@ public class DbCache extends HttpCache {
 
     private static void createIndex(SQLiteDatabase db) {
         db.execSQL("CREATE INDEX IF NOT EXISTS IDX_QUERY_ROW on " + TABLE + " (" + QUERY_ROW + ")");
+        db.execSQL("CREATE INDEX IF NOT EXISTS IDX_CREATED_AT on " + TABLE + " (" + CREATED_AT + ")");
     }
 
     /////////////////////////////////////////////////////////////////////////////////////////////////////////
