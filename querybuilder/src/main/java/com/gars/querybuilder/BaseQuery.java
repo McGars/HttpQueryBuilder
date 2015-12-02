@@ -15,15 +15,12 @@ import com.loopj.android.http.AsyncHttpResponseHandler;
 import com.loopj.android.http.RequestParams;
 import com.loopj.android.http.SyncHttpClient;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import cz.msebera.android.httpclient.Header;
 
 /**
  * Created by Феофилактов on 30.10.2014.
  */
-public abstract class BaseQuery<T extends BaseQuery> extends QueryTool{
+public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> extends QueryTool{
 
     public static boolean isDebug = false;
 
@@ -32,9 +29,9 @@ public abstract class BaseQuery<T extends BaseQuery> extends QueryTool{
     public static final long DAY = 86400000L;
     public static final long FIVE_MIN = 300000L;
     protected static final String TAG = "httpquery";
-    List<OnProgressListener> progresListeners;
 
     static AsyncHttpClient client;
+    Class<? extends StatusResult> resultClass = StatusResult.class;
     AsyncHttpClient clientSync;
     RequestParams params;
     protected Context context;
@@ -74,28 +71,16 @@ public abstract class BaseQuery<T extends BaseQuery> extends QueryTool{
         return (T) this;
     }
 
-    public interface OnQueryErrorListener {
-        public void onQueryError(StatusResult res);
+    public interface OnQueryErrorListener<R extends StatusResult> {
+        public void onQueryError(R res);
     }
 
-    public interface OnQuerySuccessListener {
-        public void onQuerySuccess(StatusResult res);
+    public interface OnQuerySuccessListener<R extends StatusResult> {
+        public void onQuerySuccess(R res);
     }
 
     public interface OnProgressListener {
         public void progress(int progress);
-    }
-
-    public void addUpdateListener(OnProgressListener progressListener) {
-        if(progresListeners == null)
-            progresListeners = new ArrayList<>();
-        if(!progresListeners.contains(progressListener))
-            progresListeners.add(progressListener);
-    }
-
-    public void removeProgressListener(OnProgressListener progressListener){
-        if(progresListeners!= null)
-            progresListeners.remove(progressListener);
     }
 
     private void initConstructor(Context context){
@@ -120,6 +105,10 @@ public abstract class BaseQuery<T extends BaseQuery> extends QueryTool{
             clientSync = new SyncHttpClient();
             clientSync.setResponseTimeout(30000);
         }
+    }
+
+    public void setResultClass(Class<? extends StatusResult> _class){
+        resultClass = _class;
     }
 
     /**
@@ -209,7 +198,16 @@ public abstract class BaseQuery<T extends BaseQuery> extends QueryTool{
         return (T) this;
     }
 
-    private boolean getCache(OnQuerySuccessListener successListener) {
+    R initResultObject() {
+        try {
+            return (R) resultClass.newInstance();
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw new RuntimeException("error init ResultClass");
+        }
+    }
+
+    private boolean getCache(OnQuerySuccessListener successListener){
         if (cache) {
             Cursor cur = getDbCache().getData(prefix + params.toString());
             if (cur.moveToFirst()) {
@@ -217,7 +215,8 @@ public abstract class BaseQuery<T extends BaseQuery> extends QueryTool{
                 String data = new String(bData);
                 if (isDebug)
                     Log.d(TAG, "cache: " + data);
-                StatusResult res = new StatusResult(data, type);
+                R res = initResultObject();
+                res.init(data, type);
                 res.setSuccess();
                 if (successListener != null)
                     successListener.onQuerySuccess(res);
@@ -239,9 +238,9 @@ public abstract class BaseQuery<T extends BaseQuery> extends QueryTool{
         getResult(successListener);
     }
 
-    public abstract void rezultDebug(OnQuerySuccessListener successListener);
+    public abstract void resultDebug(OnQuerySuccessListener successListener);
 
-    public void getResult(final OnQuerySuccessListener successListener) {
+    public void getResult(OnQuerySuccessListener successListener) {
         if (isDebug) {
             String p = params.toString();
             if (method == METHOD.GET) {
@@ -250,13 +249,13 @@ public abstract class BaseQuery<T extends BaseQuery> extends QueryTool{
                 Log.d(TAG, "request: " + encodeUrl(prefix));
                 Log.d(TAG, "params: " + p);
             }
-            rezultDebug(successListener);
+            resultDebug(successListener);
         }
         if (getCache(successListener))
             return;
 
         if (!getConnection(context)) {
-            StatusResult res = new StatusResult();
+            R res = initResultObject();
             res.setMsg(context.getString(getConnectErrorMessage()));
             res.setError();
             showError(res);
@@ -306,10 +305,10 @@ public abstract class BaseQuery<T extends BaseQuery> extends QueryTool{
         return new MyAsyncHandler(getRequestData(), successListener, progressListener);
     }
 
-    public abstract boolean fail(StatusResult stat, String data);
+    public abstract boolean fail(R stat, String data);
 
     void failResult(byte[] bytes, Header[] headers) {
-        StatusResult stat = new StatusResult();
+        R stat = initResultObject();
         String dataString = null;
         stat.setHeaders(headers);
         try {
@@ -361,7 +360,7 @@ public abstract class BaseQuery<T extends BaseQuery> extends QueryTool{
     public abstract int getConnectErrorMessage();
     public abstract int getServerErrorMessage();
 
-    boolean showError(StatusResult res) {
+    boolean showError(R res) {
         if (context == null)
             return true;
         if (!res.isSuccess()) {
@@ -387,7 +386,7 @@ public abstract class BaseQuery<T extends BaseQuery> extends QueryTool{
      *
      * @param res
      */
-    public void showStandartError(StatusResult res) {
+    public void showStandartError(R res) {
         if (context == null)
             return;
         if ((context instanceof Activity)) {
@@ -426,7 +425,7 @@ public abstract class BaseQuery<T extends BaseQuery> extends QueryTool{
         private OnQuerySuccessListener successListener;
         private OnProgressListener progressListener;
 
-        public MyAsyncHandler(RequestData reqData, OnQuerySuccessListener successListener, OnProgressListener progressListener){
+        public MyAsyncHandler(RequestData reqData, OnQuerySuccessListener<R> successListener, OnProgressListener progressListener){
             this.reqData = reqData;
             this.successListener = successListener;
             this.progressListener = progressListener;
@@ -442,9 +441,8 @@ public abstract class BaseQuery<T extends BaseQuery> extends QueryTool{
             String data = bytes == null ? null : new String(bytes);
             if (isDebug)
                 Log.d(TAG, "response: " + data);
-
-            StatusResult res = new StatusResult(data, reqData.type);
-
+            R res = initResultObject();
+            res.init(data, reqData.type);
             res.setHeaders(headers);
             res.setSuccess();
             fail(res, data);

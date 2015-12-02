@@ -31,6 +31,10 @@ public class StatusResult {
     }
 
     public StatusResult(String data, TYPE type){
+        init(data, type);
+    }
+
+    public void init(String data, TYPE type){
         this.type = type;
         if (data == null)
             return;
