@@ -35,7 +35,7 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
     AsyncHttpClient clientSync;
     RequestParams params;
     protected Context context;
-    private OnQueryErrorListener errorListener;
+    private OnQueryErrorListener<R> errorListener;
     // url for request
     private String prefix;
     private ProgressDialog pd;
@@ -193,7 +193,7 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
         return context;
     }
 
-    public T setErrorListener(OnQueryErrorListener errorListener) {
+    public T setErrorListener(OnQueryErrorListener<R> errorListener) {
         this.errorListener = errorListener;
         return (T) this;
     }
@@ -207,7 +207,7 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
         }
     }
 
-    private boolean getCache(OnQuerySuccessListener successListener){
+    private boolean getCache(OnQuerySuccessListener<R> successListener){
         if (cache) {
             Cursor cur = getDbCache().getData(prefix + params.toString());
             if (cur.moveToFirst()) {
@@ -228,27 +228,31 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
         return false;
     }
 
-    public void getResultObject(OnQuerySuccessListener successListener){
+    public void getResultObject(OnQuerySuccessListener<R> successListener){
         getResultObject(successListener, null);
     }
 
-    public void getResultArray(OnQuerySuccessListener successListener){
+    public void getResultArray(OnQuerySuccessListener<R> successListener){
         getResultArray(successListener, null);
     }
 
-    public void getResultObject(OnQuerySuccessListener successListener, OnProgressListener progressListener){
+    public void getResultObject(OnQuerySuccessListener<R> successListener, OnProgressListener progressListener){
         type = StatusResult.TYPE.OBJECT;
         getResult(successListener,progressListener);
     }
 
-    public void getResultArray(OnQuerySuccessListener successListener, OnProgressListener progressListener){
+    public void getResultArray(OnQuerySuccessListener<R> successListener, OnProgressListener progressListener){
         type = StatusResult.TYPE.ARRAY;
         getResult(successListener, progressListener);
     }
 
-    public abstract void resultDebug(OnQuerySuccessListener successListener);
+    public abstract void resultDebug(OnQuerySuccessListener<R> successListener);
 
-    public void getResult(OnQuerySuccessListener successListener, OnProgressListener progressListener) {
+    public void getResult(OnQuerySuccessListener<R> successListener) {
+        getResult(successListener, null);
+    }
+
+    public void getResult(OnQuerySuccessListener<R> successListener, OnProgressListener progressListener) {
         if (isDebug) {
             String p = params.toString();
             if (method == METHOD.GET) {
@@ -274,7 +278,7 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
         requestToServer(successListener, progressListener);
     }
 
-    private void requestToServer(final OnQuerySuccessListener successListener, OnProgressListener progressListener) {
+    private void requestToServer(OnQuerySuccessListener<R> successListener, OnProgressListener progressListener) {
 
         AsyncHttpClient tempClient = clientSync != null ? clientSync : client;
         if (method == METHOD.POST)
@@ -305,7 +309,7 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
         return reqData;
     }
 
-    public AsyncHttpResponseHandler getSuccessListener(OnQuerySuccessListener successListener, OnProgressListener progressListener) {
+    public AsyncHttpResponseHandler getSuccessListener(OnQuerySuccessListener<R> successListener, OnProgressListener progressListener) {
         return new MyAsyncHandler(getRequestData(), successListener, progressListener);
     }
 
@@ -426,7 +430,7 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
     class MyAsyncHandler extends AsyncHttpResponseHandler{
 
         private RequestData reqData;
-        private OnQuerySuccessListener successListener;
+        private OnQuerySuccessListener<R> successListener;
         private OnProgressListener progressListener;
 
         public MyAsyncHandler(RequestData reqData, OnQuerySuccessListener<R> successListener, OnProgressListener progressListener){
