@@ -229,18 +229,26 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
     }
 
     public void getResultObject(OnQuerySuccessListener successListener){
-        type = StatusResult.TYPE.OBJECT;
-        getResult(successListener);
+        getResultObject(successListener, null);
     }
 
     public void getResultArray(OnQuerySuccessListener successListener){
+        getResultArray(successListener, null);
+    }
+
+    public void getResultObject(OnQuerySuccessListener successListener, OnProgressListener progressListener){
+        type = StatusResult.TYPE.OBJECT;
+        getResult(successListener,progressListener);
+    }
+
+    public void getResultArray(OnQuerySuccessListener successListener, OnProgressListener progressListener){
         type = StatusResult.TYPE.ARRAY;
-        getResult(successListener);
+        getResult(successListener, progressListener);
     }
 
     public abstract void resultDebug(OnQuerySuccessListener successListener);
 
-    public void getResult(OnQuerySuccessListener successListener) {
+    public void getResult(OnQuerySuccessListener successListener, OnProgressListener progressListener) {
         if (isDebug) {
             String p = params.toString();
             if (method == METHOD.GET) {
@@ -263,11 +271,7 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
             return;
         }
 
-        requestToServer(successListener);
-    }
-
-    private void requestToServer(final OnQuerySuccessListener successListener) {
-        requestToServer(successListener, null);
+        requestToServer(successListener, progressListener);
     }
 
     private void requestToServer(final OnQuerySuccessListener successListener, OnProgressListener progressListener) {
