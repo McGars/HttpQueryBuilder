@@ -360,7 +360,7 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
         }
     }
 
-    protected void hideLoaders() {
+    public void hideLoaders() {
         if (pd != null)
             pd.dismiss();
     }
