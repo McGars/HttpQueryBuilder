@@ -14,4 +14,4 @@ new Query().init("http://url", StatusResult.TYPE.OBJECT)
                 .setCache(true, Query.FIVE_MIN)
                 .getResult(this);
 ```
-// StatusResult.TYPE need if you override StatusResult with your own blackjack
+StatusResult.TYPE need if you override StatusResult with your own blackjack
