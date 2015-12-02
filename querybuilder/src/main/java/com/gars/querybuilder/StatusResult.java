@@ -15,6 +15,7 @@ public class StatusResult {
     protected String msg;
     protected Header[] headers;
     protected TYPE type;
+    protected STATUS status = STATUS.SUCCESS;
 
     public enum TYPE{
         OBJECT, ARRAY, STRING
@@ -22,7 +23,6 @@ public class StatusResult {
     public enum STATUS{
         SUCCESS, ERROR, SERVERERROR
     }
-    private STATUS status = STATUS.SUCCESS;
 
     public StatusResult() {}
 
