@@ -55,47 +55,21 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
         isDebug = debug;
     }
 
-    // cancell all request
-    public void onStop() {
-        if(client!=null)
-            client.cancelAllRequests(true);
-        if(clientSync!=null)
-            clientSync.cancelAllRequests(true);
-    }
-
-    public T addHeader(String key, String header) {
-        if(client!=null)
-            client.addHeader(key, header);
-        if(clientSync!=null)
-            clientSync.addHeader(key, header);
-        return (T) this;
-    }
-
-    public interface OnQueryErrorListener<R extends StatusResult> {
-        public void onQueryError(R res);
-    }
-
-    public interface OnQuerySuccessListener<R extends StatusResult> {
-        public void onQuerySuccess(R res);
-    }
-
-    public interface OnProgressListener {
-        public void progress(int progress);
-    }
-
-    private void initConstructor(Context context){
-        this.context = context;
-        if (client == null){
-            client = new AsyncHttpClient();
-            client.setResponseTimeout(30000);
-        }
-    }
+    /**
+     * Override your own status result
+     * @return Class extends {@link StatusResult} or null for default
+     */
+    public abstract Class<? extends StatusResult> getResultClass();
 
     public BaseQuery(Context context) {
-        initConstructor(context);
+        this(context, true);
     }
 
     public BaseQuery(Context context, boolean async) {
+        resultClass = getResultClass();
+        if(resultClass == null)
+            resultClass = StatusResult.class;
+
         if(async) {
             initConstructor(context);
             return;
@@ -107,8 +81,12 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
         }
     }
 
-    public void setResultClass(Class<? extends StatusResult> _class){
-        resultClass = _class;
+    private void initConstructor(Context context){
+        this.context = context;
+        if (client == null){
+            client = new AsyncHttpClient();
+            client.setResponseTimeout(30000);
+        }
     }
 
     /**
@@ -207,6 +185,22 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
         }
     }
 
+    // cancell all request
+    public void onStop() {
+        if(client!=null)
+            client.cancelAllRequests(true);
+        if(clientSync!=null)
+            clientSync.cancelAllRequests(true);
+    }
+
+    public T addHeader(String key, String header) {
+        if(client!=null)
+            client.addHeader(key, header);
+        if(clientSync!=null)
+            clientSync.addHeader(key, header);
+        return (T) this;
+    }
+
     private boolean getCache(OnQuerySuccessListener<R> successListener){
         if (cache) {
             Cursor cur = getDbCache().getData(prefix + params.toString());
@@ -271,7 +265,6 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
             res.setMsg(context.getString(getConnectErrorMessage()));
             res.setError();
             showError(res);
-            hideLoaders();
             return;
         }
 
@@ -481,5 +474,17 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
         public void onFailure(int i, Header[] headers, byte[] bytes, Throwable throwable) {
             failResult(bytes,headers);
         }
+    }
+
+    public interface OnQueryErrorListener<R extends StatusResult> {
+        public void onQueryError(R res);
+    }
+
+    public interface OnQuerySuccessListener<R extends StatusResult> {
+        public void onQuerySuccess(R res);
+    }
+
+    public interface OnProgressListener {
+        public void progress(int progress);
     }
 }
