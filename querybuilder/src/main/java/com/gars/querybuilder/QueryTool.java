@@ -10,21 +10,12 @@ import android.widget.Toast;
  */
 public class QueryTool {
     public boolean getConnection(Context c) {
-        ConnectivityManager conMgr = (ConnectivityManager) c
-                .getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo i = conMgr.getActiveNetworkInfo();
-        boolean ret = true;
-        if (i != null) {
-            if (!i.isConnected())
-                ret = false;
-            if (!i.isAvailable())
-                ret = false;
-        }
-
-        if (i == null)
-            ret = false;
-
-        return ret;
+        ConnectivityManager cm = (ConnectivityManager)c.getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+        boolean isEnable = activeNetwork != null && activeNetwork.isConnectedOrConnecting();
+        cm = null;
+        activeNetwork = null;
+        return isEnable;
     }
 
     public static void showMsg(Context context, String msg) {
