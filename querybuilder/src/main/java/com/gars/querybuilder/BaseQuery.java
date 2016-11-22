@@ -43,7 +43,7 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
     StatusResult.TYPE type = StatusResult.TYPE.OBJECT;
     // request method
     METHOD method = METHOD.GET;
-    private boolean cache = false;
+    private boolean cache, isEncodeUrl;
     private long timeCache = HALFHOUR; // 30 минут
     private DbCache dbCache;
 
@@ -103,6 +103,7 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
     public T init(String url) {
         this.prefix = url;
         cache = false;
+        isEncodeUrl = true;
         // request method
         this.method = METHOD.GET;
         // type return content
@@ -114,6 +115,11 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
         // add user token
         preinit(url);
         params = new RequestParams();
+        return (T) this;
+    }
+
+    public T setEncodeUrl(boolean encodeUrl) {
+        isEncodeUrl = encodeUrl;
         return (T) this;
     }
 
@@ -288,7 +294,9 @@ public abstract class BaseQuery<T extends BaseQuery, R extends StatusResult> ext
         }
     }
 
-    private String encodeUrl(String url){
+    protected String encodeUrl(String url){
+            if(!isEncodeUrl)
+                return url;
         return url.replace(" ", "+");
     }
 
